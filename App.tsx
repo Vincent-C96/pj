@@ -17,7 +17,9 @@ import {
   Clock,
   Edit,
   Save,
-  Plus
+  Plus,
+  Video,
+  Upload
 } from 'lucide-react';
 import { Section } from './components/Section';
 import { TimelineEvent } from './components/TimelineEvent';
@@ -42,7 +44,7 @@ const INITIAL_DATA = {
   },
   overview: {
     time: "2025年12月19日（周五）\n- 12月20日（周六）",
-    count: "约 120 人",
+    count: "约 150 人",
     countSub: "全院教职工",
     format: "年终总结大会晚宴 + 别墅群轰趴 \n+ 烧烤互动 + 休闲团建",
     location1: "周边高端别墅度假村",
@@ -52,8 +54,9 @@ const INITIAL_DATA = {
     hotelLinkText: "酒店宴厅安排",
     hotelLinkUrl: "https://www.google.com/search?q=150人多功能宴会厅+酒店",
     hotelDesc: "需能容纳 150人以上 的多功能宴会厅，用于举办年终总结大会及晚宴。需具备良好的音响、投影设备及舞台区域。",
+    hotelVideoUrl: "https://pan.baidu.com/pfile/video?from=home&path=%2F%E5%BE%AE%E4%BF%A1%E8%A7%86%E9%A2%912025-12-12_091149_147.mp4",
     villaLinkText: "住宿分布（别墅群）",
-    villaLinkUrl: "https://www.google.com/search?q=大型独栋别墅群+团建",
+    villaLinkUrl: "https://www.jianpian.cn/a/11ylxi9w?sd=2&a_uid=&s_uid=24215703&package_type=&sc=groupmessage",
     villaDesc: "租下 6-8栋 相邻的大型独栋别墅，或者包下一个小型的民宿村。",
     villaNote: "间距确认： 别墅之间必须步行可达（3-5分钟内），最好有内部道路相连，方便各部门串门和统一集合。"
   },
@@ -68,7 +71,7 @@ const INITIAL_DATA = {
         { 
           time: "19:00 - 19:30", 
           title: "2025年度年终总结大会（核心环节）", 
-          desc: "领导致辞：高层宏观战略宣讲。\n各部门负责人汇报：简短精炼（PPT展示）。\n优秀表彰：颁发年度优秀员工、最佳教研室奖（奖状+牙线）。\n签署军令状：2026年目标启动仪式。",
+          desc: "领导致辞。\n各教研室主任汇报：简短精炼（PPT展示）。\n 领导总结2026年目标期望。",
           image: "https://picsum.photos/800/400?random=1",
           imageCaption: "[配图示意：宽敞明亮的会议厅，前方投影幕布，下方整齐排列120个座位]"
         },
@@ -101,11 +104,11 @@ const INITIAL_DATA = {
     { title: "互动游戏：你划我猜", rule: "题目设置为我们上课的课程名字。", pros: "结合学院课程文化，更有共鸣。" }
   ],
   prizes: {
-    grand: { title: "特等奖 (1名)", item: "百元刮刮乐一张" },
+    grand: { title: "特等奖 (1名)", item: "养生壶" },
     first: { title: "一等奖 (3名)", item: "电动牙刷" },
     second: { title: "二等奖 (10名)", item: "漱口水" },
     third: { title: "三等奖 (20名)", item: "牙线/零食" },
-    sunshine: { title: "阳光普照奖", item: "xx水果一箱" }
+    sunshine: { title: "阳光普照奖", item: "工会礼品（回校领取）" }
   },
   logistics: {
     materials: [
@@ -140,8 +143,14 @@ const App: React.FC = () => {
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData);
-        // Basic merge to ensure new fields are present if schema changes
-        setData({ ...INITIAL_DATA, ...parsed });
+        // Deep merge for nested objects to allow schema updates
+        setData({ 
+          ...INITIAL_DATA, 
+          ...parsed,
+          venue: { ...INITIAL_DATA.venue, ...(parsed.venue || {}) },
+          hero: { ...INITIAL_DATA.hero, ...(parsed.hero || {}) },
+          overview: { ...INITIAL_DATA.overview, ...(parsed.overview || {}) },
+        });
       } catch (e) {
         console.error("Failed to parse saved data", e);
       }
@@ -494,6 +503,51 @@ const App: React.FC = () => {
                     multiline={true}
                   />
                 </div>
+
+                {/* Video Section */}
+                <div className="mt-4">
+                  {isEditing ? (
+                    <div className="p-3 bg-blue-50/50 border border-blue-200 rounded-lg space-y-3">
+                      <div>
+                        <div className="flex items-center gap-2 text-xs font-bold text-blue-600 mb-2">
+                          <Video size={14} /> Video URL
+                        </div>
+                        <input 
+                           value={data.venue.hotelVideoUrl || ''}
+                           onChange={(e) => updateData('venue', 'hotelVideoUrl', e.target.value)}
+                           className="w-full text-xs p-2 border border-blue-300 rounded text-slate-600 placeholder:text-slate-400 focus:outline-none focus:border-blue-500" 
+                           placeholder="Paste video URL here (e.g. .mp4 link)..."
+                        />
+                      </div>
+                      
+                      <div className="relative">
+                         <div className="flex items-center gap-2 text-xs font-bold text-blue-600 mb-2">
+                           <Upload size={14} /> Or upload local video
+                         </div>
+                         <input 
+                            type="file" 
+                            accept="video/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const url = URL.createObjectURL(file);
+                                updateData('venue', 'hotelVideoUrl', url);
+                              }
+                            }}
+                            className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200"
+                         />
+                         <p className="text-[10px] text-slate-400 mt-1 italic">* Local uploads work for this session only.</p>
+                      </div>
+                    </div>
+                  ) : data.venue.hotelVideoUrl ? (
+                    <div className="rounded-xl overflow-hidden shadow-lg border border-slate-200 mt-2 bg-slate-900">
+                       <video controls className="w-full aspect-video object-cover" key={data.venue.hotelVideoUrl}>
+                          <source src={data.venue.hotelVideoUrl} type="video/mp4" />
+                          Your browser does not support the video tag.
+                       </video>
+                    </div>
+                  ) : null}
+                 </div>
               </div>
             </div>
 
